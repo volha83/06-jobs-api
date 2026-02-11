@@ -16,14 +16,44 @@ let jobsTableHeader = null;
 export const handleJobs = () => {
   jobsDiv = document.getElementById("jobs");
   const logoff = document.getElementById("logoff");
+
   const addJob = document.getElementById("add-job");
   jobsTable = document.getElementById("jobs-table");
   jobsTableHeader = document.getElementById("jobs-table-header");
 
-  jobsDiv.addEventListener("click", (e) => {
+  jobsDiv.addEventListener("click", async (e) => {
     if (inputEnabled && e.target.nodeName === "BUTTON") {
       if (e.target === addJob) {
         showAddEdit(null);
+      } else if (e.target.classList.contains("editButton")) {
+        message.textContent = "";
+        showAddEdit(e.target.dataset.id);
+      } else if (e.target.classList.contains("deleteButton")) {
+        enableInput(false);
+
+        try {
+          const response = await fetch(`/api/v1/jobs/${e.target.dataset.id}`, {
+            method: "DELETE",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+          });
+
+          const data = await response.json();
+
+          if (response.status === 200) {
+            message.textContent = data.msg;
+            showJobs();
+          } else {
+            message.textContent = data.msg;
+          }
+        } catch (err) {
+          console.log(err);
+          message.textContent = "A communication error occurred.";
+        }
+
+        enableInput(true);
       } else if (e.target === logoff) {
         setToken(null);
 
@@ -65,7 +95,7 @@ export const showJobs = async () => {
               <td>${data.jobs[i].company}</td>
               <td>${data.jobs[i].position}</td>
               <td>${data.jobs[i].status}</td>
-              <div>${editButton}${deleteButton}</div>`;
+              ${editButton}${deleteButton}`;
 
           rowEntry.innerHTML = rowHTML;
           children.push(rowEntry);
